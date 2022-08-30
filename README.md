@@ -2,6 +2,7 @@
 🐎 New level of python develop. Source code from [github](https://github.com/raynardj/gallop)
 
 > More dynamic in design, more configuration driven
+
 [![PyPI version](https://img.shields.io/pypi/v/gallop)](https://pypi.org/project/gallop/)
 ![License](https://img.shields.io/github/license/raynardj/forgebox)
 [![Test](https://github.com/raynardj/gallop/actions/workflows/test.yml/badge.svg)](https://github.com/raynardj/gallop/actions/workflows/test.yml)
