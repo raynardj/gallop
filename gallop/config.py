@@ -1,8 +1,10 @@
-from typing import Any, Dict
+from typing import Any
 import json
 import yaml
+from gallop.classroom import to_classroom
 
 
+@to_classroom
 class BaseConfig:
     """
     The base configuration class for gallop application
@@ -36,7 +38,11 @@ class BaseConfig:
         return key in self.conf_data
 
     def __repr__(self) -> str:
-        return f"Config({self.conf_data})"
+        """
+        The representation of the config is the json string
+        This design will make recursive config possible
+        """
+        return json.dumps(self.conf_data, indent=2)
 
     def __len__(self) -> int:
         return len(self.conf_data)
@@ -71,3 +77,6 @@ class BaseConfig:
         with open(path, "r") as f:
             conf_data = yaml.safe_load(f)
         return cls(**conf_data)
+
+    def to_dict(self):
+        return self.conf_data
