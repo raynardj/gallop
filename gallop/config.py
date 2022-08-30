@@ -57,7 +57,7 @@ class BaseConfig:
 
     def to_yaml(self, path: str):
         with open(path, "w") as f:
-            yaml.dump(self.conf_data, f)
+            yaml.safe_dump(self.conf_data, f)
 
     # load data from config file
     @classmethod
@@ -69,5 +69,5 @@ class BaseConfig:
     @classmethod
     def from_yaml(cls, path: str):
         with open(path, "r") as f:
-            conf_data = yaml.load(f)
+            conf_data = yaml.safe_load(f)
         return cls(**conf_data)
