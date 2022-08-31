@@ -2,6 +2,7 @@ from typing import Callable, Union
 
 
 CLASS_ROOM = dict()
+JSON_FRIENDLY = [str, float, int, bool, type(None)]
 
 
 def to_classroom(x: Union[str, object]) -> Union[object, Callable]:

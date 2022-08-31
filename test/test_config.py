@@ -57,3 +57,24 @@ def test_inheritance():
     assert config2.a == config3.a == 1
     assert config2.d == config3.d == 5
     assert len(config2) == len(config3) == 2
+
+
+def test_recursive():
+    """
+    Test the recursiveness of the BaseConfig class
+    """
+    config = BaseConfig(a=1, b=2, c={"hello": "here"})
+    assert config.c.hello == "here"
+    config.c.hello = "there"
+    assert config.c.hello == "there"
+    config.c.hello = {"world": "here"}
+    assert config.c.hello.world == "here"
+
+    config.to_json("test/test3.json")
+    config.to_yaml("test/test3.yaml")
+    config2 = BaseConfig.from_json("test/test3.json")
+    config3 = BaseConfig.from_yaml("test/test3.yaml")
+    assert config2.a == config3.a == 1
+    assert config2.b == config3.b == 2
+    assert config2.c.hello.world == config3.c.hello.world == "here"
+    assert len(config2) == len(config3) == 3
