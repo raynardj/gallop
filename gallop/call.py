@@ -1,11 +1,13 @@
 from gallop.config import BaseConfig
 from gallop.classroom import to_classroom, cl
-from typing import Any, Optional, Dict, List
+from typing import (
+    Any, Optional, Dict, List
+    )
 import json
 import yaml
+import logging
 from pathlib import Path
-
-from gallop.gallop.classroom import CLASS_ROOM, JSON_FRIENDLY
+from gallop.classroom import JSON_FRIENDLY, CLASS_ROOM
 
 
 def conf_mixin_factory(class_name: str) -> object:
@@ -76,6 +78,66 @@ def conf_mixin_factory(class_name: str) -> object:
     # register the class in the CLASS_ROOM
     to_classroom(ConfMixin.__name__)(ConfMixin)
     return ConfMixin
+
+
+@to_classroom("Caller")
+class Caller:
+    def __init__(self, config: BaseConfig):
+        self.config = config
+        if "func_name" not in self.config:
+            raise ValueError("func_name is required")
+
+        self.args = self.config.get("args", [])
+        self.kwargs = self.config.get("kwargs", {})
+
+        self.callable = cl(self.config.func_name)
+
+        self.checkin = self.config.get("checkin", None)
+
+    @classmethod
+    def run_list(cls, some_list: List[Any]) -> List[Any]:
+        for i, item in enumerate(some_list):
+            if type(item) in (dict, BaseConfig):
+                if "func_name" in item:
+                    some_list[i] = cls(item)()
+                else:
+                    some_list[i] = cls.run_dict(item)
+                continue
+            if type(item) is list:
+                some_list[i] = cls.run_list(item)
+        return some_list
+
+    @classmethod
+    def run_dict(cls, some_dict: Dict[str, Any]) -> Dict[str, Any]:
+        for key, value in some_dict.items():
+            if type(value) in (dict, BaseConfig):
+                if "func_name" in value:
+                    logging.info(f"✨ Running {key} as function")
+                    some_dict[key] = cls(value)()
+                elif "checkout" in value:
+                    logging.info(f"👀 Checking out {key}")
+                    some_dict[key] = cl(value.checkout)
+                else:
+                    some_dict[key] = cls.run_dict(value)
+                continue
+            if type(value) is list:
+                some_dict[key] = cls.run_list(value)
+        return some_dict
+
+    def __call__(self) -> Any:
+        """
+        Execute the function
+        """
+        self.args = self.run_list(self.args)
+        self.kwargs = self.run_dict(self.kwargs)
+        res = self.callable(*self.args, **self.kwargs)
+
+        # register the result back to checkout
+        if self.checkin is not None:
+            if self.checkin in CLASS_ROOM:
+                logging.warning(f"💫 Overwriting Name: {self.checkin}")
+            to_classroom(self.checkin)(res)
+        return res
 
 
 @to_classroom("Field")

@@ -34,6 +34,9 @@ class BaseConfig:
             raise KeyError(f"Config has no key {key}")
         return self.conf_data[key]
 
+    def get(self, key: str, default: Any = None) -> Any:
+        return self.conf_data.get(key, default)
+
     def __setitem__(self, key: str, value: Any):
         self.conf_data[key] = self.substantiate_recursive(value)
 
