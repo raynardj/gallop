@@ -1,0 +1,35 @@
+run_result:
+  - func_name: Dummy1
+    description: | 
+      Root function happening here
+    args:
+      - true
+      - 1
+      - func_name: Dummy1
+        description: |
+          Nested function happening here
+          Will calculate this value before we calculate the root function
+        kwargs:
+          name: A
+    kwargs:
+      name: B
+      alpha: 2
+      bravo: kwarg2
+    checkin: result1
+  - func_name: Dummy1
+    conf_type: func
+    description: | 
+      Root function happening here
+    args:
+      - func_name: Dummy1
+        description: |
+          Nested function happening here
+          Will calculate this value before we calculate the root function
+        kwargs:
+          name: C
+    kwargs:
+      charlie: 2
+      name: D
+      delta:
+        checkout: result1
+    checkin: result2

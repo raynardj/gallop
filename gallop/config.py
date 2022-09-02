@@ -97,7 +97,7 @@ class BaseConfig:
         if type(x) is dict:
             return {k: self.flatten_recursive(v) for k, v in x.items()}
         logging.warning(
-            f"type {type(x)} not handled properly")
+            f"🫦 type {type(x)} not flattened properly")
         return x
 
     def substantiate_recursive(self, x: Any) -> Any:
@@ -111,7 +111,7 @@ class BaseConfig:
         if type(x) in [tuple, set, list]:
             return [self.substantiate_recursive(y) for y in x]
         logging.warning(
-            f"type {type(x)} not handled properly")
+            f"🍕 type {type(x)} not substantiated properly")
         return x
 
     def to_dict(self) -> Dict[str, Any]:
