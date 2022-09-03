@@ -1,13 +1,16 @@
 from gallop.config import BaseConfig
 from gallop.classroom import to_classroom, cl
+from gallop.funcs import Importer
 from typing import (
-    Any, Dict, List, Union
+    Any, Dict, List
 )
 import json
 import yaml
 import logging
+from datetime import datetime
 from pathlib import Path
-from gallop.classroom import CLASS_ROOM
+from gallop.classroom import CLASS_ROOM, mark_sn
+import traceback as tb
 
 
 def conf_mixin_factory(class_name: str) -> object:
@@ -82,11 +85,20 @@ def conf_mixin_factory(class_name: str) -> object:
 
 @to_classroom("Caller")
 class Caller:
-    def __init__(self, config: BaseConfig,):
+    def __init__(
+        self,
+        config: BaseConfig,
+        depth: int = 0
+    ):
         self.config = config
         if "func_name" not in self.config:
             raise ValueError("func_name is required")
 
+        self.depth = depth
+
+        if self.config.func_name[:4] == "imp:":
+            logging.info(f"Importing {self.config.func_name}")
+            self.callable = Importer(self.config.func_name[4:])
         self.callable = cl(self.config.func_name)
 
         self.args = self.config.get("args", [])
@@ -94,60 +106,85 @@ class Caller:
         self.checkin = self.config.get("checkin", None)
 
     @classmethod
-    def run_list(cls, some_list: List[Any]) -> List[Any]:
-        return_list = list()
-        for item in some_list:
-            # recurse into dict
-            if type(item) in (dict, BaseConfig):
-                if "func_name" in item:
-                    if type(item) == dict:
-                        item = BaseConfig(**item)
-                    return_list.append(cls(item,)())
-                else:
-                    return_list.append(cls.run_dict(item))
-            # recurse into list
-            elif type(item) is list:
-                return_list.append(cls.run_list(item))
-            # default case
+    def resolve_item(cls, item: Any, depth: int = 0) -> Any:
+        """
+        Recursively resolve the item
+        """
+        if type(item) in (dict, BaseConfig):
+            if "func_name" in item:
+                # a function package
+                if type(item) == dict:
+                    item = BaseConfig(**item,)
+                return cls(item, depth=depth)()
+            elif "checkout" in item:
+                # a checkout package
+                return cl(item.checkout)
             else:
-                return_list.append(item)
+                # not a function package
+                return cls.run_dict(item, depth=depth+1)
+        # recurse into list
+        elif type(item) is list:
+            return cls.run_list(item, depth=depth+1)
+        # default case
+        else:
+            return item
+
+    @classmethod
+    def run_list(cls, some_list: List[Any], depth: int = 0) -> List[Any]:
+        return_list = list(
+            cls.resolve_item(item, depth=depth)
+            for item in some_list)
         return return_list
 
     @classmethod
     def run_dict(
         cls,
-        some_dict: Union[Dict[str, Any], BaseConfig],
+        some_dict: Dict[str, Any],
+        depth: int = 0
     ) -> Dict[str, Any]:
-        return_dict = dict()
-        for key, value in some_dict.items():
-            if type(value) in (dict, BaseConfig):
-                if "func_name" in value:
-                    logging.info(f"✨ Running {key} as function")
-                    if type(value) == dict:
-                        value = BaseConfig(**value)
-                    return_dict[key] = cls(value)()
-                elif "checkout" in value:
-                    logging.info(f"👀 Checking out {key}")
-                    return_dict[key] = cl(value.checkout)
-                else:
-                    return_dict[key] = cls.run_dict(value)
-            elif type(value) is list:
-                return_dict[key] = cls.run_list(value)
-            else:
-                return_dict[key] = value
+        return_dict = dict(
+            (key, cls.resolve_item(some_dict[key], depth=depth))
+            for key in some_dict)
         return return_dict
+
+    def checkin_value(self, res: Any):
+        """
+        check-in the result to CLASS_ROOM
+        """
+        if self.checkin is not None:
+            if self.checkin in CLASS_ROOM:
+                logging.warning(f"💫 Overwriting Name: {self.checkin}")
+            to_classroom(self.checkin)(res)
 
     def __call__(self) -> Any:
         """
         Execute the function
         """
-        self.args = self.run_list(self.args)
-        self.kwargs = self.run_dict(self.kwargs)
-        res = self.callable(*self.args, **self.kwargs)
+        spacing = "\t" * self.depth
+        sn = mark_sn()
+        logging.info(f"{spacing}🚀 Calling[🍔 {sn}]: {self.config.func_name}")
+        # description
+        description = self.config.get("description", None)
+        logging.info(f"{spacing}| {description}")
+        start_time = datetime.now()
+
+        # process args and kwargs
+        self.args = self.run_list(self.args, depth=self.depth+1)
+        self.kwargs = self.run_dict(self.kwargs, depth=self.depth+1)
+
+        # execute the calling
+        try:
+            res = self.callable(*self.args, **self.kwargs)
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
+        except Exception as e:
+            tb.print_exc()
+            logging.error(f"{spacing}[❌ {sn}]: {e}")
+            raise e
+        end_time = datetime.now()
+        delta = end_time - start_time
+        logging.info(f"{spacing}[🏁 {sn}] {self.config.func_name} :⏱️ {delta}")
 
         # register the result back to checkout
-        if self.checkin is not None:
-            if self.checkin in CLASS_ROOM:
-                logging.warning(f"💫 Overwriting Name: {self.checkin}")
-            to_classroom(self.checkin)(res)
+        self.checkin_value(res)
         return res

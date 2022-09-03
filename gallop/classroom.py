@@ -1,7 +1,9 @@
 from typing import Callable, Union
 
 
-CLASS_ROOM = dict()
+CLASS_ROOM = dict(
+    callable_sn=0,
+)
 JSON_FRIENDLY = [str, float, int, bool, type(None)]
 
 
@@ -26,3 +28,12 @@ def cl(class_name: str) -> object:
     if class_name not in CLASS_ROOM:
         raise ValueError(f"Class {class_name} not found")
     return CLASS_ROOM[class_name]
+
+
+def mark_sn() -> int:
+    """
+    Mark the serial number for the callable
+    """
+    sn = CLASS_ROOM["callable_sn"]
+    CLASS_ROOM["callable_sn"] += 1
+    return sn
