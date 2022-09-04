@@ -38,7 +38,7 @@ config.to_yaml("some/path.yaml")
 ## Run python task from config
 You can turn any callable execution in to configuration, eg save the following
 ```yaml
-func_name: use:print
+func_name: use:logging.warning
 args:
   - "hello world"
 ```
@@ -47,7 +47,8 @@ to `sometask.yaml` and run `gallop sometask`
 
 Is the same to run the python script
 ```python
-print("hello world")
+import logging
+logging.warning("hello world")
 ```
 
 ### `param:` configuration
@@ -129,13 +130,12 @@ Save the yaml to `run_bert.yaml` and you can use `gallop run_bert --output featu
 
 Run in commandline with changed value, and printout one of the checkout value
 ```shell
-
+gallop test/test_transformers --loglevel debug --output features
 ```
 
 And run it with changed value
 ```
-gallop test/test_transformers --loglevel debug --output features \
-    --param:pred_task.2.args.0.0 "The [MASK] house is where the POTUS live and work"   
+gallop test/test_transformers --param:pred_task.2.args.0.0 "The [MASK] house is where the POTUS live and work"   
 ```
 
 
