@@ -1,0 +1,92 @@
+#!/usr/bin/env python
+
+
+from fire import Fire
+from pathlib import Path
+import logging
+from gallop.config import BaseConfig
+from gallop.call import Caller
+from gallop.classroom import cl
+
+
+ASCII_ART = """
+   [-;-/=_
+    `-; \=_       ___        _________    __    __    ____  ____ 
+      ) ,"-...--./===--__   / ____/   |  / /   / /   / __ \/ __ \ 
+    __|/      /  ]`        / / __/ /| | / /   / /   / / / / /_/ /
+   /;--> >...-\ <\_       / /_/ / ___ |/ /___/ /___/ /_/ / ____/ 
+   `- <<,      7/-.\,     \____/_/  |_/_____/_____/\____/_/      
+       `-     /(   `-                                            
+"""
+
+
+class bcolors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    RED = '\033[91m'
+    YELLOW = '\033[93m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+    def __init__(self, text: str, color: str):
+        self.text = str(text)
+        self.color = getattr(self, color.upper())
+
+    def __str__(self):
+        return self.color + self.text + bcolors.ENDC
+
+
+def task_to_path(task: str) -> Path:
+    if Path(task).exists():
+        return Path(task)
+    elif Path(f"{task}.yaml").exists():
+        return Path(f"{task}.yaml")
+    elif Path(f"{task}.yml").exists():
+        return Path(f"{task}.yml")
+    else:
+        return None
+
+
+def run_sh(task: str, **data) -> None:
+    """
+    Run a shell command
+    """
+    path = task_to_path(task)
+
+    if "loglevel" in data:
+        loglevel = data["loglevel"]
+        logging.getLogger().setLevel(
+            getattr(logging, loglevel.upper(), logging.WARNING)
+        )
+
+    if path is None:
+        logging.error(f"❗️ Cannot find task {task}")
+        raise FileNotFoundError(f"Task {task} not found")
+
+    logging.warning(bcolors(ASCII_ART, "blue"))
+
+    func_config = BaseConfig.from_yaml(path)
+
+    for key, value in data.items():
+        if key[:6] == "param:":
+            logging.debug(f"👻 Setting {key[6:]} to {value}")
+            func_config.overwrite(key[6:], value)
+
+    logging.debug(bcolors(func_config, "header"))
+
+    result = Caller.resolve_item(func_config)
+
+    if "print_result" in data:
+        if data["print_result"]:
+            print(bcolors(result, "green"))
+
+    if "output" in data:
+        output = data["output"]
+        print(bcolors(cl(output), "green"))
+
+
+if __name__ == "__main__":
+    Fire(run_sh)

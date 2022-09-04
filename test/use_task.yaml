@@ -1,0 +1,34 @@
+simple_task:
+  - func_name: use:gallop.funcs.write_file
+    kwargs:
+      string: 
+        func_name: use:json.dumps
+        args:
+          - - 1
+            - 2
+            - 3
+            - somekey: somevalue
+        checkin: json_string
+        description: |
+          Use the json.dumps function to convert a list of values to a json string
+      filename: test/test_save.json
+    description: |
+      Use the gallop.funcs.write_file function
+      to save a json string to a file
+  - func_name: use:json.loads
+    args: 
+      - func_name: use:gallop.funcs.read_file
+        kwargs:
+          filename: test/test_save.json
+    checkin: reconstructed_data
+  - func_name: use:gallop.funcs.equal_assertion
+    kwargs:
+      a: 
+        checkout: reconstructed_data
+        description: |
+          Use the reconstructed_data from the json.loads function
+      b:
+        - 1
+        - 2
+        - 3
+        - somekey: somevalue

@@ -3,6 +3,7 @@ import json
 import yaml
 from gallop.classroom import to_classroom, JSON_FRIENDLY
 import logging
+import regex as re
 
 
 @to_classroom
@@ -61,6 +62,28 @@ class BaseConfig:
 
     def keys(self):
         return self.conf_data.keys()
+
+    def overwrite(self, key_string: str, value: Any):
+        """
+        Overwrite a value in the config
+        with a chain of keys pointing to value
+        """
+        chain = key_string.split(".")
+        if len(chain) == 1:
+            self[chain[0]] = value
+            return
+        item = self.conf_data
+        for key in chain[:-1]:
+            # if key is number
+            if re.match(r"^\d+$", key):
+                key = int(key)
+                item = item[key]
+            else:
+                item = item[key]
+        last_key = chain[-1]
+        if re.match(r"^\d+$", last_key):
+            last_key = int(last_key)
+        item[last_key] = value
 
     # save data to config file
     def to_json(self, path: str):

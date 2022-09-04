@@ -1,6 +1,7 @@
 from gallop.config import BaseConfig
 from gallop.classroom import to_classroom, cl
 from gallop.funcs import Importer
+from gallop.classroom import CLASS_ROOM, mark_sn
 from typing import (
     Any, Dict, List
 )
@@ -9,8 +10,8 @@ import yaml
 import logging
 from datetime import datetime
 from pathlib import Path
-from gallop.classroom import CLASS_ROOM, mark_sn
 import traceback as tb
+import os
 
 
 def conf_mixin_factory(class_name: str) -> object:
@@ -96,14 +97,36 @@ class Caller:
 
         self.depth = depth
 
-        if self.config.func_name[:4] == "imp:":
-            logging.info(f"Importing {self.config.func_name}")
+        if self.config.func_name[:4] == "use:":
+            logging.info(f"Using {self.config.func_name}")
             self.callable = Importer(self.config.func_name[4:])
-        self.callable = cl(self.config.func_name)
+        else:
+            self.callable = cl(self.config.func_name)
 
         self.args = self.config.get("args", [])
         self.kwargs = self.config.get("kwargs", {})
         self.checkin = self.config.get("checkin", None)
+
+    @staticmethod
+    def checkout_val(val: str) -> Any:
+        """
+        checkout the value from CLASS_ROOM
+        """
+        if val in CLASS_ROOM:
+            return CLASS_ROOM[val]
+
+        # load enviroment variable
+        if val[:4] == "env:":
+            logging.debug(f"🌲 Loading env: {val[4:]}")
+            return os.environ[val[4:]]
+        val_list = val.split(".")
+        if len(val_list) > 1:
+            if val_list[0] in CLASS_ROOM:
+                root_module = CLASS_ROOM[val_list[0]]
+                for attr in val_list[1:]:
+                    root_module = getattr(root_module, attr)
+                return root_module
+        raise ValueError(f"Cannot find {val} in CLASS_ROOM")
 
     @classmethod
     def resolve_item(cls, item: Any, depth: int = 0) -> Any:
@@ -118,7 +141,7 @@ class Caller:
                 return cls(item, depth=depth)()
             elif "checkout" in item:
                 # a checkout package
-                return cl(item.checkout)
+                return cls.checkout_val(item.checkout)
             else:
                 # not a function package
                 return cls.run_dict(item, depth=depth+1)
@@ -147,13 +170,14 @@ class Caller:
             for key in some_dict)
         return return_dict
 
-    def checkin_value(self, res: Any):
+    def checkin_value(self, res: Any, spacing: str = ""):
         """
         check-in the result to CLASS_ROOM
         """
         if self.checkin is not None:
             if self.checkin in CLASS_ROOM:
-                logging.warning(f"💫 Overwriting Name: {self.checkin}")
+                logging.warning(f"{spacing}💫 Overwriting Name: {self.checkin}")
+            logging.debug(f"{spacing}🍄 Checkin: {self.checkin} = {res}")
             to_classroom(self.checkin)(res)
 
     def __call__(self) -> Any:
@@ -176,15 +200,21 @@ class Caller:
         try:
             res = self.callable(*self.args, **self.kwargs)
         except KeyboardInterrupt:
-            raise KeyboardInterrupt
+            raise KeyboardInterrupt("User Interrupted")
         except Exception as e:
+            logging.error(f"{spacing}❌ [🍔 {sn}]: {e}")
             tb.print_exc()
-            logging.error(f"{spacing}[❌ {sn}]: {e}")
+            for i, arg in enumerate(self.args):
+                logging.error(f"{spacing}❌ [ARG {i}]: {arg}")
+            for key, value in self.kwargs.items():
+                logging.error(f"{spacing}❌ [KWARG:{key}]: {value}")
             raise e
+
+        # log timing
         end_time = datetime.now()
         delta = end_time - start_time
         logging.info(f"{spacing}[🏁 {sn}] {self.config.func_name} :⏱️ {delta}")
 
         # register the result back to checkout
-        self.checkin_value(res)
+        self.checkin_value(res, spacing)
         return res

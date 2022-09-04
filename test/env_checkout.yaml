@@ -1,0 +1,6 @@
+sometask:
+  func_name: use:gallop.funcs.checkin_value
+  kwargs:
+    key: sys-user
+    value: 
+      checkout: env:USER

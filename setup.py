@@ -54,6 +54,7 @@ setuptools.setup(
     name=cfg["lib_name"],
     license='GPLv3+',
     version=cfg["version"],
+    scripts=cfg.get("scripts", "").split(),
     classifiers=[
         "Development Status :: " + statuses[int(cfg["status"])],
         "Intended Audience :: " + cfg["audience"].title(),
