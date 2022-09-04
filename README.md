@@ -8,6 +8,16 @@
 [![Test](https://github.com/raynardj/gallop/actions/workflows/test.yml/badge.svg)](https://github.com/raynardj/gallop/actions/workflows/test.yml)
 [![pypi build](https://github.com/raynardj/gallop/actions/workflows/publish.yml/badge.svg)](https://github.com/raynardj/gallop/actions/workflows/publish.yml)
 
+```
+   [-;-/=_
+    `-; \=_       ___        _________    __    __    ____  ____ 
+      ) ,"-...--./===--__   / ____/   |  / /   / /   / __ \/ __ \ 
+    __|/      /  ]`        / / __/ /| | / /   / /   / / / / /_/ /
+   /;--> >...-\ <\_       / /_/ / ___ |/ /___/ /___/ /_/ / ____/ 
+   `- <<,      7/-.\,     \____/_/  |_/_____/_____/\____/_/      
+       `-     /(   `-     
+```
+
 ## Install
 ```shell
 pip install gallop
