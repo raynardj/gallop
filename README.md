@@ -130,12 +130,13 @@ Save the yaml to `run_bert.yaml` and you can use `gallop run_bert --output featu
 
 Run in commandline with changed value, and printout one of the checkout value
 ```shell
-gallop test/test_transformers --loglevel debug --output features
+gallop run_bert --loglevel debug --output features
 ```
 
-And run it with changed value
+And run it with `CHANGED VALUE`
 ```
-gallop test/test_transformers --param:pred_task.2.args.0.0 "The [MASK] house is where the POTUS live and work"   
+gallop run_bert 、
+     --param:pred_task.2.args.0.0 "The [MASK] house is where the POTUS live and work"   
 ```
 
 
