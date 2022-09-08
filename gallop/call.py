@@ -170,15 +170,24 @@ class Caller:
             for key in some_dict)
         return return_dict
 
-    def checkin_value(self, res: Any, spacing: str = ""):
+    def checkin_single_value(self, key: str, res: Any, spacing: str = ""):
         """
         check-in the result to CLASS_ROOM
         """
-        if self.checkin is not None:
-            if self.checkin in CLASS_ROOM:
-                logging.warning(f"{spacing}💫 Overwriting Name: {self.checkin}")
-            logging.debug(f"{spacing}🍄 Checkin: {self.checkin} = {res}")
-            to_classroom(self.checkin)(res)
+        if key in CLASS_ROOM:
+            logging.warning(f"{spacing}💫 Overwriting Name: {key}")
+        logging.debug(f"{spacing}🍄 Checkin: {key} = {res}")
+        to_classroom(self.checkin)(res)
+
+    def checkin_value(self, res: Any, spacing: str = ""):
+        if self.checkin is None:
+            return
+        if ',' in self.checkin:
+            checkin_list = self.checkin.split(",")
+            for checkin_key, res_part in zip(checkin_list, res):
+                self.checkin_single_value(checkin_key, res_part, spacing)
+        else:
+            self.checkin_single_value(self.checkin, res, spacing)
 
     def __call__(self) -> Any:
         """
