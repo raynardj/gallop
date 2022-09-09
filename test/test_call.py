@@ -77,3 +77,24 @@ def test_env_checkout():
     Caller.resolve_item(func_config)
 
     assert cl("sys-user") == os.environ["USER"]
+
+
+def split_result():
+    return 1, 2
+
+
+to_classroom("split_result")(split_result)
+
+
+def test_split_result():
+    split_config = BaseConfig(
+        steps=dict(
+            func_name="split_result",
+            checkin=["split_result_a", "split_result_b"]
+        )
+    )
+
+    Caller.resolve_item(split_config)
+
+    assert cl("split_result_a") == 1
+    assert cl("split_result_b") == 2
