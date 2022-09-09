@@ -1,6 +1,7 @@
-from typing import Callable, Any
 from gallop.classroom import to_classroom, CLASS_ROOM
+from typing import Callable, Any
 import logging
+from importlib import import_module
 
 
 @to_classroom("Importer")
@@ -25,13 +26,18 @@ def Importer(imports: str) -> Callable:
         to_classroom(imports)(module)
         return module
     else:
-        # longer sequence of module
-        # import the root module first
-        package = __import__(import_list[0])
+        try:
+            # longer sequence of module
+            # import the root module first
+            package = __import__(import_list[0])
 
-        # import the part down the chain
-        for module in import_list[1:]:
-            package = getattr(package, module)
+            # import the part down the chain
+            for module in import_list[1:]:
+                package = getattr(package, module)
+        except AttributeError:
+            # import strategy 2
+            package = import_module(".".join(import_list[:-1]))
+            package = getattr(package, import_list[-1])
 
         # save to cache
         logging.debug(f"🔌 CACHING {imports}")
